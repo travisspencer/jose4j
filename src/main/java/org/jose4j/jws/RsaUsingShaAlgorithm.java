@@ -22,10 +22,10 @@ import org.jose4j.lang.InvalidKeyException;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.Security;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.util.Iterator;
 
 /**
  */
@@ -49,7 +49,31 @@ public class RsaUsingShaAlgorithm extends BaseSignatureAlgorithm implements Json
         KeyValidationSupport.checkRsaKeySize(privateKey);
     }
 
-    public static class RsaPssSha256 extends RsaUsingShaAlgorithm
+    static class RsaUsingPssAlgorithm extends RsaUsingShaAlgorithm
+    {
+        private static final boolean isRsaSsaPssSigningAlgorithmAvailable;
+        private static final String RSASSA_PSS = "RSASSA-PSS";
+
+        static
+        {
+            boolean foundRsaSsaPss = false;
+            Iterator<String> signatureAlgorithms = Security.getAlgorithms("Signature").iterator();
+
+            while (!foundRsaSsaPss && signatureAlgorithms.hasNext())
+            {
+                foundRsaSsaPss = RSASSA_PSS.equalsIgnoreCase(signatureAlgorithms.next());
+            }
+
+            isRsaSsaPssSigningAlgorithmAvailable = foundRsaSsaPss;
+        }
+
+        RsaUsingPssAlgorithm(String id, String javaAlgo)
+        {
+            super(id, isRsaSsaPssSigningAlgorithmAvailable ? RSASSA_PSS : javaAlgo);
+        }
+    }
+
+    public static class RsaPssSha256 extends RsaUsingPssAlgorithm
     {
         public RsaPssSha256()
         {
@@ -60,7 +84,7 @@ public class RsaUsingShaAlgorithm extends BaseSignatureAlgorithm implements Json
         }
     }
 
-    public static class RsaPssSha384 extends RsaUsingShaAlgorithm
+    public static class RsaPssSha384 extends RsaUsingPssAlgorithm
     {
         public RsaPssSha384()
         {
@@ -71,7 +95,7 @@ public class RsaUsingShaAlgorithm extends BaseSignatureAlgorithm implements Json
         }
     }
 
-    public static class RsaPssSha512 extends RsaUsingShaAlgorithm
+    public static class RsaPssSha512 extends RsaUsingPssAlgorithm
     {
         public RsaPssSha512()
         {
